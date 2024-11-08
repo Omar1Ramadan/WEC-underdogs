@@ -9,5 +9,3 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Ignore the main.py file in a specific location if required
