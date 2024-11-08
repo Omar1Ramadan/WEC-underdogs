@@ -502,14 +502,14 @@ class ModernGame:
 class PowerUp(pygame.sprite.Sprite):
     def __init__(self, x, y, power_type):
         super().__init__()
-        self.power_type = power_type
+        self.type = power_type
         self.image = pygame.Surface((20, 20), pygame.SRCALPHA)
         
-        if self.power_type == "ammo":
+        if self.type == "ammo":
             self.image.fill(NEON_BLUE)
-        elif self.power_type == "shield":
+        elif self.type == "shield":
             self.image.fill(NEON_GREEN)
-        elif self.power_type == "special":
+        elif self.type == "special":
             self.image.fill(NEON_PINK)
         
         self.rect = self.image.get_rect(center=(x, y))
