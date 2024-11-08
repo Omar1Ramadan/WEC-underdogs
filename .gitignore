@@ -1,0 +1,14 @@
+# Ignore macOS system files
+.DS_Store
+
+# Ignore the virtual environment folder
+venv/
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore the main.py file in a specific location if required
+AsteroidBlitz/main.py
