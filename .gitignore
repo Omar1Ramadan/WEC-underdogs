@@ -11,4 +11,3 @@ __pycache__/
 *.pyd
 
 # Ignore the main.py file in a specific location if required
-AsteroidBlitz/main.py
