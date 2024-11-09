@@ -112,19 +112,28 @@ class ParticleEffect:
             surface.blit(particle_surface, (particle['x'], particle['y']))
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, health, speed, shoot_delay):
         super().__init__()
-        self.image = pygame.Surface((40, 40), pygame.SRCALPHA)
-        pygame.draw.rect(self.image, NEON_GREEN, (0, 0, 40, 40))
+
+            # Load the sprite image
+        self.image = pygame.image.load("layers/png-clipart-pixel-art-display-resolution-others-miscellaneous-angle_processed.png").convert_alpha()
+        
+        # Scale the image if necessary
+        self.image = pygame.transform.scale(self.image, (50, 50))  # Adjust size as needed
+        
+        # Get the rectangle for positioning
         self.rect = self.image.get_rect(center=(x, y))
-        self.health = 50
+
+        # Create a collision mask for pixel-perfect collisions
+        self.mask = pygame.mask.from_surface(self.image)
+        self.health = health
+        self.speed = speed
+        self.shoot_delay = shoot_delay
         self.shoot_timer = 0
-        self.shoot_delay = 60
-        self.speed = 2
         self.direction = pygame.math.Vector2(0, 0)
         self.change_direction_timer = 0
         self.change_direction_delay = 120
-        self.invulnerable_timer = 60  # Add this line
+        self.invulnerable_timer = 60
 
     def update(self, player=None):
         if self.invulnerable_timer > 0:
@@ -139,14 +148,19 @@ class Enemy(pygame.sprite.Sprite):
 
     def shoot(self, player):
         if player is None:
-            return  # Avoid errors if player is not passed
-        angle = math.degrees(math.atan2(
-            player.rect.centery - self.rect.centery,
-            player.rect.centerx - self.rect.centerx
-        ))
+            return
+        angle = math.degrees(math.atan2(player.rect.centery - self.rect.centery, player.rect.centerx - self.rect.centerx))
         projectile = ModernProjectile(self.rect.centerx, self.rect.centery, angle, "normal")
         game.all_sprites.add(projectile)
         game.projectiles.add(projectile)
+
+    # Add multi-shot logic based on difficulty
+        if game.difficulty > 5:  # Multi-shot at higher difficulty
+            for offset in [-15, 15]:  # Spread angles
+                extra_projectile = ModernProjectile(self.rect.centerx, self.rect.centery, angle + offset, "normal")
+                game.all_sprites.add(extra_projectile)
+                game.projectiles.add(extra_projectile)
+
 
 class ModernPlayer(pygame.sprite.Sprite):
     def __init__(self):
@@ -514,7 +528,7 @@ class ModernGame:
                             if enemy.health <= 0:
                                 self.create_explosion(enemy.rect.centerx, enemy.rect.centery, NEON_GREEN)
                                 enemy.kill()
-                                self.score += 10
+                                self.score += 60
 
             
             # Spawn asteroids with increasing frequency and speed
@@ -537,7 +551,7 @@ class ModernGame:
                     if projectile.type == "shotgun":
                         # Special projectiles destroy asteroids immediately
                         asteroid.kill()
-                        self.score += 20
+                        self.score += 50
                     else:
                         # Normal projectiles split larger asteroids
                         if asteroid.size > 30:
