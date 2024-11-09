@@ -74,6 +74,34 @@ class ParticleEffect:
             particle_surface.set_alpha(alpha)
             surface.blit(particle_surface, (particle['x'], particle['y']))
 
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.Surface((40, 40), pygame.SRCALPHA)  # Placeholder for enemy image
+        pygame.draw.rect(self.image, NEON_GREEN, (0, 0, 40, 40))  # Draw a simple rectangle as the enemy
+        self.rect = self.image.get_rect(center=(x, y))
+        self.health = 50
+        self.shoot_timer = 0  # Timer to control shooting frequency
+        self.shoot_delay = 60  # Delay in frames between shots
+
+    def update(self):
+        # Update the shoot timer
+        if self.shoot_timer > 0:
+            self.shoot_timer -= 1
+        else:
+            self.shoot()  # Call the shoot method
+            self.shoot_timer = self.shoot_delay  # Reset the timer
+
+    def shoot(self):
+        # Calculate the angle to the player
+        player_angle = math.degrees(math.atan2(self.rect.centery - game.player.rect.centery,
+                                                self.rect.centerx - game.player.rect.centerx))
+        
+        # Create a projectile aimed at the player
+        projectile = ModernProjectile(self.rect.centerx, self.rect.centery, player_angle, "normal")
+        game.all_sprites.add(projectile)
+        game.projectiles.add(projectile)
+
 class ModernPlayer(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -261,6 +289,7 @@ class ModernGame:
         self.asteroids = pygame.sprite.Group()
         self.projectiles = pygame.sprite.Group()
         self.power_ups = pygame.sprite.Group()  # Added this line
+        self.enemies = pygame.sprite.Group()
 
         # Create player
         self.player = ModernPlayer()
@@ -272,8 +301,19 @@ class ModernGame:
         
         # Particle systems
         self.explosion_particles = []
-
         
+        # enemy spawning timer
+        self.enemy_spawn_timer = 0
+        self.enemy_spawn_delay = 120 # Delay in frames between enemy spawns
+
+    def spawn_enemy(self):
+        #spawn an enemy at a random position 
+        x = random.randint(0,WIDTH)
+        y = random.randint(0,HEIGHT // 2)
+        enemy = Enemy(x,y)
+        self.all_sprites.add(enemy)
+        self.enemies.add(enemy)
+
     def create_explosion(self, x, y, color):
         particle_effect = ParticleEffect(x, y, color)
         particle_effect.create_particles(20)
@@ -375,6 +415,15 @@ class ModernGame:
             self.all_sprites.update()
             self.update_particles()
             self.update_background()
+
+
+            # Spawn enenmies at regular intervals
+            if self.enemy_spawn_timer <= 0:
+                self.spawn_enemy()
+                self.enemy_spawn_timer = self.enemy_spawn_delay # Reset the spawn timer
+            else:
+                self.enemy_spawn_timer -= 1
+
             
             # Spawn asteroids with increasing frequency and speed
             if len(self.asteroids) < 5 + self.level:
