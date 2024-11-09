@@ -34,6 +34,7 @@
 | `Space`    | Fire normal projectiles               |
 | `Q`        | Fire a burst of special projectiles (if ammo is available) |
 | `R`        | Restart the game after Game Over      |
+| `P`        | Pause the game                        |
 
 ---
 

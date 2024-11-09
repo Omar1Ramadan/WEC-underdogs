@@ -8,6 +8,9 @@ import os
 pygame.init()
 mixer.init()
 
+mixer.init(frequency=44100, size=-16, channels=2, buffer=512)  # Default settings
+
+
 # Set up the display with a larger resolution
 WIDTH = 1280
 HEIGHT = 720
@@ -354,6 +357,9 @@ class ModernGame:
         self.game_over = False
         self.score = 0
         self.level = 1
+        # Background music
+        self.background_music = "layers/Space Invaders - Space Invaders.mp3"
+        mixer.music.load(self.background_music)
         self.background_stars = [
             (random.randint(0, WIDTH), random.randint(0, HEIGHT)) 
             for _ in range(100)
@@ -376,6 +382,9 @@ class ModernGame:
             pygame.image.load("layers/parallax-space-stars.png").convert_alpha(), 
             (WIDTH, HEIGHT)), "speed": 2.5, "x": 0}
         ]
+        # Start the background music
+        mixer.music.set_volume(0.5)  # Adjust volume (0.0 to 1.0)
+        mixer.music.play(-1)  # Loop the background music indefinitely
 
         # Sprite groups
         self.all_sprites = pygame.sprite.Group()
