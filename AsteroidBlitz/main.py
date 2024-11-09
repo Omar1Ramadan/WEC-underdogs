@@ -81,28 +81,48 @@ class ParticleEffect:
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface((40, 40), pygame.SRCALPHA)  # Placeholder for enemy image
-        pygame.draw.rect(self.image, NEON_GREEN, (0, 0, 40, 40))  # Draw a simple rectangle as the enemy
+        self.image = pygame.Surface((40, 40), pygame.SRCALPHA)
+        pygame.draw.rect(self.image, NEON_GREEN, (0, 0, 40, 40))
         self.rect = self.image.get_rect(center=(x, y))
         self.health = 50
-        self.shoot_timer = 0  # Timer to control shooting frequency
-        self.shoot_delay = 60  # Delay in frames between shots
+        self.shoot_timer = 0
+        self.shoot_delay = 60
+        self.speed = 2
+        self.direction = pygame.math.Vector2(0, 0)
+        self.change_direction_timer = 0
+        self.change_direction_delay = 120
+        self.invulnerable_timer = 60  # Add this line
 
-    def update(self):
-        # Update the shoot timer
+    def update(self, player=None):
+        if self.invulnerable_timer > 0:
+            self.invulnerable_timer -= 1
+
+    # Movement and shooting logic
+        if self.change_direction_timer <= 0:
+            self.direction = pygame.math.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
+            self.direction.normalize_ip()
+            self.change_direction_timer = self.change_direction_delay
+        else:
+            self.change_direction_timer -= 1
+
+        self.rect.centerx += self.direction.x * self.speed
+        self.rect.centery += self.direction.y * self.speed
+
         if self.shoot_timer > 0:
             self.shoot_timer -= 1
         else:
-            self.shoot()  # Call the shoot method
-            self.shoot_timer = self.shoot_delay  # Reset the timer
+            self.shoot(player)
+            self.shoot_timer = self.shoot_delay
 
-    def shoot(self):
-        # Calculate the angle to the player
-        player_angle = math.degrees(math.atan2(self.rect.centery - game.player.rect.centery,
-                                                self.rect.centerx - game.player.rect.centerx))
-        
-        # Create a projectile aimed at the player
-        projectile = ModernProjectile(self.rect.centerx, self.rect.centery, player_angle, "normal")
+
+    def shoot(self, player):
+        if player is None:
+            return  # Avoid errors if player is not passed
+        angle = math.degrees(math.atan2(
+            player.rect.centery - self.rect.centery,
+            player.rect.centerx - self.rect.centerx
+        ))
+        projectile = ModernProjectile(self.rect.centerx, self.rect.centery, angle, "normal")
         game.all_sprites.add(projectile)
         game.projectiles.add(projectile)
 
@@ -278,6 +298,7 @@ class ModernAsteroid(pygame.sprite.Sprite):
 
 class ModernGame:
     def __init__(self):
+        self.player = ModernPlayer()  # Ensure player is properly created
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.running = True
@@ -436,6 +457,8 @@ class ModernGame:
 
     def update(self):
         if not self.game_over:
+            for enemy in self.enemies:
+                enemy.update(self.player)
             self.all_sprites.update()
             self.update_particles()
             # self.update_background()
@@ -447,6 +470,19 @@ class ModernGame:
                 self.enemy_spawn_timer = self.enemy_spawn_delay # Reset the spawn timer
             else:
                 self.enemy_spawn_timer -= 1
+
+            # In ModernGame update method
+            for enemy in self.enemies:
+                if enemy.invulnerable_timer <= 0:
+                # Proceed with collision or damage logic
+                    hits = pygame.sprite.groupcollide(self.projectiles, self.enemies, True, False)
+                    for projectile, enemies_hit in hits.items():
+                        for enemy in enemies_hit:
+                            enemy.health -= 25  # Example damage
+                            if enemy.health <= 0:
+                                self.create_explosion(enemy.rect.centerx, enemy.rect.centery, NEON_GREEN)
+                                enemy.kill()
+                                self.score += 10
 
             
             # Spawn asteroids with increasing frequency and speed
