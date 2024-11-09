@@ -315,11 +315,21 @@ class ModernGame:
         ]
         self.star_speeds = [random.uniform(0.5, 2) for _ in range(100)]
         self.background_layers = [
-            {"image": pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-stars.png").convert_alpha(), "speed": 0.5, "x": 0},
-            {"image": pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-far-planets.png").convert_alpha(), "speed": 1, "x": 0},
-            {"image": pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-ring-planet.png").convert_alpha(), "speed": 1.5, "x": 0},
-            {"image": pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-big-planet.png").convert_alpha(), "speed": 2, "x": 0},
-            {"image": pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-backgound.png").convert_alpha(), "speed": 2.5, "x": 0}
+            {"image": pygame.transform.scale(
+            pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-stars.png").convert_alpha(), 
+            (WIDTH, HEIGHT)), "speed": 0.5, "x": 0},
+            {"image": pygame.transform.scale(
+             pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-far-planets.png").convert_alpha(), 
+            (WIDTH/2, HEIGHT/2)), "speed": 1, "x": 0},
+            {"image": pygame.transform.scale(
+            pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-ring-planet.png").convert_alpha(), 
+            (WIDTH, HEIGHT)), "speed": 1.5, "x": 0},
+            {"image": pygame.transform.scale(
+            pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-big-planet.png").convert_alpha(), 
+            (WIDTH/4, HEIGHT/4)), "speed": 2, "x": 0},
+            {"image": pygame.transform.scale(
+            pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-backgound.png").convert_alpha(), 
+            (WIDTH, HEIGHT)), "speed": 2.5, "x": 0}
         ]
 
         # Sprite groups
