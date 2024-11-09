@@ -631,14 +631,24 @@ class ModernGame:
         
         pygame.display.flip()
 
+    
+    
     def run(self):
         while self.running:
-            self.clock.tick(60)
-            self.handle_events()
-            self.update()
-            self.draw()
-            pygame.display.flip()
-        pygame.quit()
+            self.clock.tick(60)  # Limit to 60 frames per second
+            self.handle_events()  # Handle user input
+            
+            if not self.game_over:
+                self.update()  # Update game state
+            
+            self.draw()  # Render the game
+            
+            # Check for pause key
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_p]:  # Use the 'P' key to pause the game
+                show_pause_menu(self.screen)
+
+        pygame.quit()  # Clean up and exit
 
 # Power-up class definition
 class PowerUp(pygame.sprite.Sprite):
@@ -665,11 +675,9 @@ class PowerUp(pygame.sprite.Sprite):
 
 
             
-
 # Start the game
 if __name__ == "__main__":
     # Show start menu before starting the game
     show_start_menu(screen)
-    game = ModernGame()
-    game.run()       
-                        
+    game = ModernGame()  # Create an instance of the game
+    game.run()  # Start the game loop
