@@ -93,27 +93,31 @@ class Enemy(pygame.sprite.Sprite):
         self.change_direction_delay = 120
         self.invulnerable_timer = 60  # Add this line
 
-    def update(self, player=None):
-        if self.invulnerable_timer > 0:
-            self.invulnerable_timer -= 1
-
-    # Movement and shooting logic
-        if self.change_direction_timer <= 0:
-            self.direction = pygame.math.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
-            self.direction.normalize_ip()
-            self.change_direction_timer = self.change_direction_delay
-        else:
-            self.change_direction_timer -= 1
-
+    def update(self, player):
+    # Enemy movement logic
         self.rect.centerx += self.direction.x * self.speed
         self.rect.centery += self.direction.y * self.speed
 
+    # Boundary checks: Reverse direction and adjust position
+        if self.rect.left < 0:
+            self.rect.left = 0
+            self.direction.x *= -1
+        if self.rect.right > WIDTH:
+            self.rect.right = WIDTH
+            self.direction.x *= -1
+        if self.rect.top < 0:
+            self.rect.top = 0
+            self.direction.y *= -1
+        if self.rect.bottom > HEIGHT:
+            self.rect.bottom = HEIGHT
+            self.direction.y *= -1
+
+    # Enemy shooting logic
         if self.shoot_timer > 0:
             self.shoot_timer -= 1
         else:
             self.shoot(player)
             self.shoot_timer = self.shoot_delay
-
 
     def shoot(self, player):
         if player is None:
@@ -341,12 +345,18 @@ class ModernGame:
         self.enemy_spawn_delay = 120 # Delay in frames between enemy spawns
 
     def spawn_enemy(self):
-        #spawn an enemy at a random position 
-        x = random.randint(0,WIDTH)
-        y = random.randint(0,HEIGHT // 2)
-        enemy = Enemy(x,y)
-        self.all_sprites.add(enemy)
-        self.enemies.add(enemy)
+        for _ in range(10):  # Try up to 10 times to find a safe position
+            x = random.randint(50, WIDTH - 50)
+            y = random.randint(50, HEIGHT // 2)  # Keep enemies at the top half
+            new_enemy = Enemy(x, y)
+
+        # Ensure no overlap with asteroids or other enemies
+            if (not pygame.sprite.spritecollideany(new_enemy, self.asteroids) and
+                not pygame.sprite.spritecollideany(new_enemy, self.enemies)):
+                self.all_sprites.add(new_enemy)
+                self.enemies.add(new_enemy)
+                return  # Successfully spawned an enemy
+        print("Failed to spawn enemy after 10 attempts.")
 
     def create_explosion(self, x, y, color):
         particle_effect = ParticleEffect(x, y, color)
@@ -462,6 +472,9 @@ class ModernGame:
             self.all_sprites.update()
             self.update_particles()
             # self.update_background()
+            # Ignore collisions between enemies and asteroids
+            pygame.sprite.groupcollide(self.enemies, self.asteroids, False, False)
+
 
 
             # Spawn enenmies at regular intervals
