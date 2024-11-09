@@ -119,7 +119,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(x, y))
         self.health = 50
         self.shoot_timer = 0
-        self.shoot_delay = 60
+        self.shoot_delay = 40
         self.speed = 1
         self.direction = pygame.math.Vector2(0, 0)
         self.change_direction_timer = 0
@@ -151,6 +151,7 @@ class Enemy(pygame.sprite.Sprite):
     def shoot(self, player):
         if player is None:
             return  # Avoid errors if player is not passed
+
         angle = math.degrees(math.atan2(
             player.rect.centery - self.rect.centery,
             player.rect.centerx - self.rect.centerx
@@ -158,6 +159,8 @@ class Enemy(pygame.sprite.Sprite):
         projectile = ModernProjectile(self.rect.centerx, self.rect.centery, angle, "normal")
         game.all_sprites.add(projectile)
         game.projectiles.add(projectile)
+        print("Projectile added:", projectile)  # Debug print to confirm addition
+        print("Current projectiles count:", len(game.projectiles))  
 
 class ModernPlayer(pygame.sprite.Sprite):
     def __init__(self):
@@ -266,6 +269,7 @@ class ModernProjectile(pygame.sprite.Sprite):
     def update(self):
         self.position += self.velocity
         self.rect.center = self.position
+        print("Projectile position:", self.position) 
         self.particles.x = self.rect.centerx
         self.particles.y = self.rect.centery
         self.particles.create_particles(1)
@@ -348,15 +352,15 @@ class ModernGame:
             {"image": pygame.transform.scale(
             pygame.image.load("layers/parallax-space-backgound.png").convert_alpha(), 
             (WIDTH, HEIGHT)), "speed": 0.5, "x": 0},
-            {"image": pygame.transform.scale(
-             pygame.image.load("layers/parallax-space-big-planet.png").convert_alpha(), 
-            (WIDTH/2, HEIGHT/2)), "speed": 1, "x": 0},
-            {"image": pygame.transform.scale(
-            pygame.image.load("layers/parallax-space-far-planets.png").convert_alpha(), 
-            (WIDTH, HEIGHT)), "speed": 1.5, "x": 0},
-            {"image": pygame.transform.scale(
-            pygame.image.load("layers/parallax-space-ring-planet.png").convert_alpha(), 
-            (WIDTH/4, HEIGHT/4)), "speed": 2, "x": 0},
+            # {"image": pygame.transform.scale(
+            #  pygame.image.load("layers/parallax-space-big-planet.png").convert_alpha(), 
+            # (WIDTH/2, HEIGHT/2)), "speed": 1, "x": 0},
+            # {"image": pygame.transform.scale(
+            # pygame.image.load("layers/parallax-space-far-planets.png").convert_alpha(), 
+            # (WIDTH, HEIGHT)), "speed": 1.5, "x": 0},
+            # {"image": pygame.transform.scale(
+            # pygame.image.load("layers/parallax-space-ring-planet.png").convert_alpha(), 
+            # (WIDTH/4, HEIGHT/4)), "speed": 2, "x": 0},
             {"image": pygame.transform.scale(
             pygame.image.load("layers/parallax-space-stars.png").convert_alpha(), 
             (WIDTH, HEIGHT)), "speed": 2.5, "x": 0}
@@ -641,6 +645,10 @@ class ModernGame:
         self.draw_background()
         self.draw_particles()
         
+        for projectile in self.projectiles:
+            self.screen.blit(projectile.image, projectile.rect)
+            print("Projectile drawn at:", projectile.rect.topleft)
+
         # Draw engine particles
         self.player.engine_particles.draw(self.screen)
         
