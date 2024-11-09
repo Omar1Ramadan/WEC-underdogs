@@ -119,7 +119,7 @@ class ModernPlayer(pygame.sprite.Sprite):
         self.health = 100
         self.shield = 100
         self.ammunition = 50
-        self.special_ammo = 5
+        self.special_ammo = 6
         self.invincibility_timer = 0
         self.engine_particles = ParticleEffect(self.rect.centerx, self.rect.bottom, NEON_PINK)
 
@@ -186,7 +186,11 @@ class ModernProjectile(pygame.sprite.Sprite):
             self.size = (12, 12)
             self.color = NEON_PINK
             self.speed = 12
-        
+            #a for loop that iterates up to 3
+            #
+
+
+
         self.image = pygame.Surface(self.size, pygame.SRCALPHA)
         pygame.draw.circle(self.image, self.color, 
                          (self.size[0]//2, self.size[1]//2), 
@@ -387,16 +391,19 @@ class ModernGame:
                     projectile = ModernProjectile(spawn_x, spawn_y, self.player.angle, "normal")
                     self.all_sprites.add(projectile)
                     self.projectiles.add(projectile)
-                elif event.key == pygame.K_q and self.player.special_ammo > 0:
-                    self.player.special_ammo -= 1
+                elif event.key == pygame.K_q and self.player.special_ammo >= 3:
+                    self.player.special_ammo -= 3
+                    #if player.special_ammo
                 
                 # Calculate the spawn position in front of the player
                     spawn_x = self.player.rect.centerx + (self.player.image.get_width() / 2) * math.cos(math.radians(self.player.angle))
                     spawn_y = self.player.rect.centery + (self.player.image.get_height() / 2) * math.sin(math.radians(self.player.angle))
-                
-                    projectile = ModernProjectile(spawn_x, spawn_y, self.player.angle, "special")
-                    self.all_sprites.add(projectile)
-                    self.projectiles.add(projectile)
+
+                    for i in range(3):
+                        projectile = ModernProjectile(spawn_x, spawn_y, self.player.angle, "special")
+                        self.all_sprites.add(projectile)
+                        self.projectiles.add(projectile)
+
                 elif event.key == pygame.K_r and self.game_over:
                     self.__init__()
 
@@ -465,7 +472,7 @@ class ModernGame:
                     if self.score % 100 == 0:
                         self.level += 1
                         # Reward player with special ammo on level up
-                        self.player.special_ammo = min(self.player.special_ammo + 1, 5)
+                        self.player.special_ammo = min(self.player.special_ammo + 3, 6)
             
             # Check player-asteroid collisions
             if self.player.invincibility_timer == 0:
@@ -500,7 +507,7 @@ class ModernGame:
                 elif power_up.type == "shield":
                     self.player.shield = min(self.player.shield + 50, 100)
                 elif power_up.type == "special":
-                    self.player.special_ammo = min(self.player.special_ammo + 1, 5)
+                    self.player.special_ammo = min(self.player.special_ammo + 3, 6)
                 
                 # Create collection effect
                 self.create_explosion(power_up.rect.centerx, power_up.rect.centery, NEON_BLUE)
