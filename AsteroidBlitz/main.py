@@ -14,6 +14,10 @@ HEIGHT = 720
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Modern Asteroid Blitz")
 
+
+print("Current working directory:", os.getcwd())
+
+
 # Colors with modern palette
 SPACE_BLUE = (13, 20, 36)
 NEON_BLUE = (0, 219, 255)
@@ -285,7 +289,14 @@ class ModernGame:
             for _ in range(100)
         ]
         self.star_speeds = [random.uniform(0.5, 2) for _ in range(100)]
-        
+        self.background_layers = [
+            {"image": pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-stars.png").convert_alpha(), "speed": 0.5, "x": 0},
+            {"image": pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-far-planets.png").convert_alpha(), "speed": 1, "x": 0},
+            {"image": pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-ring-planet.png").convert_alpha(), "speed": 1.5, "x": 0},
+            {"image": pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-big-planet.png").convert_alpha(), "speed": 2, "x": 0},
+            {"image": pygame.image.load("C:/Users/natha/Documents/WECA_Python_Game/WEC-underdogs/AsteroidBlitz/layers/parallax-space-backgound.png").convert_alpha(), "speed": 2.5, "x": 0}
+        ]
+
         # Sprite groups
         self.all_sprites = pygame.sprite.Group()
         self.asteroids = pygame.sprite.Group()
@@ -333,22 +344,27 @@ class ModernGame:
         for particle_effect in self.explosion_particles:
             particle_effect.draw(self.screen)
             
-    def update_background(self):
-        for i in range(len(self.background_stars)):
-            self.background_stars[i] = (
-                (self.background_stars[i][0] - self.star_speeds[i]) % WIDTH,
-                self.background_stars[i][1]
-            )
+    # def update_background(self):
+    #     for i in range(len(self.background_stars)):
+    #         self.background_stars[i] = (
+    #             (self.background_stars[i][0] - self.star_speeds[i]) % WIDTH,
+    #             self.background_stars[i][1]
+    #         )
             
     def draw_background(self):
-        self.screen.fill(SPACE_BLUE)
-        for pos, speed in zip(self.background_stars, self.star_speeds):
-            alpha = int(255 * (speed / 2))
-            star_surface = pygame.Surface((2, 2))
-            star_surface.fill(WHITE)
-            star_surface.set_alpha(alpha)
-            self.screen.blit(star_surface, pos)
-            
+        screen.fill((0, 0, 0))  # Clear the screen with a black background
+        for layer in self.background_layers:
+            # Move the layer to the left by its speed
+            layer["x"] -= layer["speed"]
+
+            # Draw the layer twice to create a seamless scrolling effect
+            screen.blit(layer["image"], (layer["x"], 0))
+            screen.blit(layer["image"], (layer["x"] + layer["image"].get_width(), 0))
+
+            # Reset the layer position if it has moved completely off screen
+            if layer["x"] <= -layer["image"].get_width():
+                layer["x"] = 0
+                
     def draw_hud(self):
         # Health bar
         health_width = 200
@@ -422,7 +438,7 @@ class ModernGame:
         if not self.game_over:
             self.all_sprites.update()
             self.update_particles()
-            self.update_background()
+            # self.update_background()
 
 
             # Spawn enenmies at regular intervals
@@ -553,7 +569,7 @@ class ModernGame:
             self.handle_events()
             self.update()
             self.draw()
-        
+            pygame.display.flip()
         pygame.quit()
 
 # Power-up class definition
