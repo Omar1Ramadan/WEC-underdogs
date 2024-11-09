@@ -112,7 +112,7 @@ class ParticleEffect:
             surface.blit(particle_surface, (particle['x'], particle['y']))
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, x, y, health, speed, shoot_delay):
+    def __init__(self, x, y):
         super().__init__()
 
             # Load the sprite image
@@ -126,12 +126,10 @@ class Enemy(pygame.sprite.Sprite):
 
         # Create a collision mask for pixel-perfect collisions
         self.mask = pygame.mask.from_surface(self.image)
-        self.health = health
-        self.speed = speed
-        self.shoot_delay = shoot_delay
         self.shoot_timer = 0
         self.shoot_delay = 40
         self.speed = 1
+        self.health = 50
         self.direction = pygame.math.Vector2(0, 0)
         self.change_direction_timer = 0
         self.change_direction_delay = 120
