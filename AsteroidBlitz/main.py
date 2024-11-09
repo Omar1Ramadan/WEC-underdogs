@@ -126,11 +126,12 @@ class ModernPlayer(pygame.sprite.Sprite):
             self.rect.bottom = HEIGHT
             self.velocity.y *= -0.5
 
-        # Rotation based on movement direction
+       # Rotation based on movement direction
         if abs(self.velocity.x) > 0.1 or abs(self.velocity.y) > 0.1:
-            self.angle = math.degrees(math.atan2(-self.velocity.x, -self.velocity.y))
-        
-        self.image = pygame.transform.rotate(self.original_image, self.angle)
+            self.angle = math.degrees(math.atan2(self.velocity.y, self.velocity.x))  # Correct order of arguments
+
+        # Rotate the image based on the angle
+        self.image = pygame.transform.rotate(self.original_image, -self.angle)  # Negate the angle for correct rotation
         self.rect = self.image.get_rect(center=self.rect.center)
 
         # Update engine particles
@@ -338,22 +339,22 @@ class ModernGame:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and self.player.ammunition > 0:
                     self.player.ammunition -= 1
-                    projectile = ModernProjectile(
-                        self.player.rect.centerx, 
-                        self.player.rect.centery,
-                        self.player.angle,
-                        "normal"
-                    )
+                
+                # Calculate the spawn position in front of the player
+                    spawn_x = self.player.rect.centerx + (self.player.image.get_width() / 2) * math.cos(math.radians(self.player.angle))
+                    spawn_y = self.player.rect.centery + (self.player.image.get_height() / 2) * math.sin(math.radians(self.player.angle))
+                
+                    projectile = ModernProjectile(spawn_x, spawn_y, self.player.angle, "normal")
                     self.all_sprites.add(projectile)
                     self.projectiles.add(projectile)
                 elif event.key == pygame.K_q and self.player.special_ammo > 0:
                     self.player.special_ammo -= 1
-                    projectile = ModernProjectile(
-                        self.player.rect.centerx,
-                        self.player.rect.centery,
-                        self.player.angle,
-                        "special"
-                    )
+                
+                # Calculate the spawn position in front of the player
+                    spawn_x = self.player.rect.centerx + (self.player.image.get_width() / 2) * math.cos(math.radians(self.player.angle))
+                    spawn_y = self.player.rect.centery + (self.player.image.get_height() / 2) * math.sin(math.radians(self.player.angle))
+                
+                    projectile = ModernProjectile(spawn_x, spawn_y, self.player.angle, "special")
                     self.all_sprites.add(projectile)
                     self.projectiles.add(projectile)
                 elif event.key == pygame.K_r and self.game_over:
