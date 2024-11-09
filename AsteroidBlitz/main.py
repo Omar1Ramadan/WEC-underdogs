@@ -112,19 +112,30 @@ class ParticleEffect:
             surface.blit(particle_surface, (particle['x'], particle['y']))
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, health, speed, shoot_delay):
         super().__init__()
-        self.image = pygame.Surface((40, 40), pygame.SRCALPHA)
-        pygame.draw.rect(self.image, NEON_GREEN, (0, 0, 40, 40))
+
+            # Load the sprite image
+        self.image = pygame.image.load("layers/png-clipart-pixel-art-display-resolution-others-miscellaneous-angle_processed.png").convert_alpha()
+        
+        # Scale the image if necessary
+        self.image = pygame.transform.scale(self.image, (50, 50))  # Adjust size as needed
+        
+        # Get the rectangle for positioning
         self.rect = self.image.get_rect(center=(x, y))
-        self.health = 50
+
+        # Create a collision mask for pixel-perfect collisions
+        self.mask = pygame.mask.from_surface(self.image)
+        self.health = health
+        self.speed = speed
+        self.shoot_delay = shoot_delay
         self.shoot_timer = 0
         self.shoot_delay = 40
         self.speed = 1
         self.direction = pygame.math.Vector2(0, 0)
         self.change_direction_timer = 0
         self.change_direction_delay = 120
-        self.invulnerable_timer = 60  # Add this line
+        self.invulnerable_timer = 60
 
     def update(self, player=None):
         if self.invulnerable_timer > 0:
@@ -161,6 +172,8 @@ class Enemy(pygame.sprite.Sprite):
         game.projectiles.add(projectile)
         print("Projectile added:", projectile)  # Debug print to confirm addition
         print("Current projectiles count:", len(game.projectiles))  
+
+
 
 class ModernPlayer(pygame.sprite.Sprite):
     def __init__(self):
@@ -581,7 +594,7 @@ class ModernGame:
                     if projectile.type == "shotgun":
                         # Special projectiles destroy asteroids immediately
                         asteroid.kill()
-                        self.score += 20
+                        self.score += 50
                     else:
                         # Normal projectiles split larger asteroids
                         if asteroid.size > 30:
@@ -679,14 +692,24 @@ class ModernGame:
         
         pygame.display.flip()
 
+    
+    
     def run(self):
         while self.running:
-            self.clock.tick(60)
-            self.handle_events()
-            self.update()
-            self.draw()
-            pygame.display.flip()
-        pygame.quit()
+            self.clock.tick(60)  # Limit to 60 frames per second
+            self.handle_events()  # Handle user input
+            
+            if not self.game_over:
+                self.update()  # Update game state
+            
+            self.draw()  # Render the game
+            
+            # Check for pause key
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_p]:  # Use the 'P' key to pause the game
+                show_pause_menu(self.screen)
+
+        pygame.quit()  # Clean up and exit
 
 # Power-up class definition
 class PowerUp(pygame.sprite.Sprite):
@@ -713,11 +736,9 @@ class PowerUp(pygame.sprite.Sprite):
 
 
             
-
 # Start the game
 if __name__ == "__main__":
     # Show start menu before starting the game
     show_start_menu(screen)
-    game = ModernGame()
-    game.run()       
-                        
+    game = ModernGame()  # Create an instance of the game
+    game.run()  # Start the game loop
