@@ -26,6 +26,38 @@ NEON_GREEN = (57, 255, 20)
 WHITE = (255, 255, 255)
 YELLOW = (255, 255, 0)
 
+# Start Menu function
+def show_start_menu(screen):
+    screen.fill((0, 0, 0))  # Black background
+    font = pygame.font.Font(None, 74)
+    title_text = font.render("Press Any Key to Start", True, (255, 255, 255))
+    screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 2 - title_text.get_height() // 2))
+    pygame.display.flip()
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif event.type == pygame.KEYDOWN:
+                waiting = False
+
+# Pause Menu function
+def show_pause_menu(screen):
+    font = pygame.font.Font(None, 74)
+    pause_text = font.render("Game Paused", True, (255, 255, 255))
+    screen.blit(pause_text, (WIDTH // 2 - pause_text.get_width() // 2, HEIGHT // 2 - pause_text.get_height() // 2))
+    pygame.display.flip()
+    paused = True
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    paused = False
+
 # Load and scale assets (using colored shapes as placeholders)
 def create_player_ship():
     surface = pygame.Surface((40, 50), pygame.SRCALPHA)
@@ -40,6 +72,7 @@ def create_shield_effect():
     surface = pygame.Surface((60, 60), pygame.SRCALPHA)
     pygame.draw.circle(surface, (*NEON_BLUE, 128), (30, 30), 29, 2)
     return surface
+
 
 class ParticleEffect:
     def __init__(self, x, y, color):
@@ -670,11 +703,13 @@ class PowerUp(pygame.sprite.Sprite):
             self.kill()
 
 
+
             
 
 # Start the game
 if __name__ == "__main__":
+    # Show start menu before starting the game
+    show_start_menu(screen)
     game = ModernGame()
-    game.run()
-                        
+    game.run()       
                         
