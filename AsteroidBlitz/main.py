@@ -14,6 +14,10 @@ HEIGHT = 720
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Modern Asteroid Blitz")
 
+
+print("Current working directory:", os.getcwd())
+
+
 # Colors with modern palette
 SPACE_BLUE = (13, 20, 36)
 NEON_BLUE = (0, 219, 255)
@@ -110,28 +114,37 @@ class ParticleEffect:
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface((40, 40), pygame.SRCALPHA)  # Placeholder for enemy image
-        pygame.draw.rect(self.image, NEON_GREEN, (0, 0, 40, 40))  # Draw a simple rectangle as the enemy
+        self.image = pygame.Surface((40, 40), pygame.SRCALPHA)
+        pygame.draw.rect(self.image, NEON_GREEN, (0, 0, 40, 40))
         self.rect = self.image.get_rect(center=(x, y))
         self.health = 50
-        self.shoot_timer = 0  # Timer to control shooting frequency
-        self.shoot_delay = 60  # Delay in frames between shots
+        self.shoot_timer = 0
+        self.shoot_delay = 60
+        self.speed = 2
+        self.direction = pygame.math.Vector2(0, 0)
+        self.change_direction_timer = 0
+        self.change_direction_delay = 120
+        self.invulnerable_timer = 60  # Add this line
 
-    def update(self):
-        # Update the shoot timer
-        if self.shoot_timer > 0:
-            self.shoot_timer -= 1
+    def update(self, player=None):
+        if self.invulnerable_timer > 0:
+            self.invulnerable_timer -= 1
+    # Movement and shooting logic
+        if self.change_direction_timer <= 0:
+            self.direction = pygame.math.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
+            self.direction.normalize_ip()
+            self.change_direction_timer = self.change_direction_delay
         else:
-            self.shoot()  # Call the shoot method
-            self.shoot_timer = self.shoot_delay  # Reset the timer
+            self.change_direction_timer -= 1
 
-    def shoot(self):
-        # Calculate the angle to the player
-        player_angle = math.degrees(math.atan2(self.rect.centery - game.player.rect.centery,
-                                                self.rect.centerx - game.player.rect.centerx))
-        
-        # Create a projectile aimed at the player
-        projectile = ModernProjectile(self.rect.centerx, self.rect.centery, player_angle, "normal")
+    def shoot(self, player):
+        if player is None:
+            return  # Avoid errors if player is not passed
+        angle = math.degrees(math.atan2(
+            player.rect.centery - self.rect.centery,
+            player.rect.centerx - self.rect.centerx
+        ))
+        projectile = ModernProjectile(self.rect.centerx, self.rect.centery, angle, "normal")
         game.all_sprites.add(projectile)
         game.projectiles.add(projectile)
 
@@ -307,6 +320,7 @@ class ModernAsteroid(pygame.sprite.Sprite):
 
 class ModernGame:
     def __init__(self):
+        self.player = ModernPlayer()  # Ensure player is properly created
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.running = True
@@ -318,7 +332,24 @@ class ModernGame:
             for _ in range(100)
         ]
         self.star_speeds = [random.uniform(0.5, 2) for _ in range(100)]
-        
+        self.background_layers = [
+            {"image": pygame.transform.scale(
+            pygame.image.load("layers/parallax-space-backgound.png").convert_alpha(), 
+            (WIDTH, HEIGHT)), "speed": 0.5, "x": 0},
+            {"image": pygame.transform.scale(
+             pygame.image.load("layers/parallax-space-big-planet.png").convert_alpha(), 
+            (WIDTH/2, HEIGHT/2)), "speed": 1, "x": 0},
+            {"image": pygame.transform.scale(
+            pygame.image.load("layers/parallax-space-far-planets.png").convert_alpha(), 
+            (WIDTH, HEIGHT)), "speed": 1.5, "x": 0},
+            {"image": pygame.transform.scale(
+            pygame.image.load("layers/parallax-space-ring-planet.png").convert_alpha(), 
+            (WIDTH/4, HEIGHT/4)), "speed": 2, "x": 0},
+            {"image": pygame.transform.scale(
+            pygame.image.load("layers/parallax-space-stars.png").convert_alpha(), 
+            (WIDTH, HEIGHT)), "speed": 2.5, "x": 0}
+        ]
+
         # Sprite groups
         self.all_sprites = pygame.sprite.Group()
         self.asteroids = pygame.sprite.Group()
@@ -366,22 +397,27 @@ class ModernGame:
         for particle_effect in self.explosion_particles:
             particle_effect.draw(self.screen)
             
-    def update_background(self):
-        for i in range(len(self.background_stars)):
-            self.background_stars[i] = (
-                (self.background_stars[i][0] - self.star_speeds[i]) % WIDTH,
-                self.background_stars[i][1]
-            )
+    # def update_background(self):
+    #     for i in range(len(self.background_stars)):
+    #         self.background_stars[i] = (
+    #             (self.background_stars[i][0] - self.star_speeds[i]) % WIDTH,
+    #             self.background_stars[i][1]
+    #         )
             
     def draw_background(self):
-        self.screen.fill(SPACE_BLUE)
-        for pos, speed in zip(self.background_stars, self.star_speeds):
-            alpha = int(255 * (speed / 2))
-            star_surface = pygame.Surface((2, 2))
-            star_surface.fill(WHITE)
-            star_surface.set_alpha(alpha)
-            self.screen.blit(star_surface, pos)
-            
+        screen.fill((0, 0, 0))  # Clear the screen with a black background
+        for layer in self.background_layers:
+            # Move the layer to the left by its speed
+            layer["x"] -= layer["speed"]
+
+            # Draw the layer twice to create a seamless scrolling effect
+            screen.blit(layer["image"], (layer["x"], 0))
+            screen.blit(layer["image"], (layer["x"] + layer["image"].get_width(), 0))
+
+            # Reset the layer position if it has moved completely off screen
+            if layer["x"] <= -layer["image"].get_width():
+                layer["x"] = 0
+                
     def draw_hud(self):
         # Health bar
         health_width = 200
@@ -453,9 +489,11 @@ class ModernGame:
 
     def update(self):
         if not self.game_over:
+            for enemy in self.enemies:
+                enemy.update(self.player)
             self.all_sprites.update()
             self.update_particles()
-            self.update_background()
+            # self.update_background()
 
 
             # Spawn enenmies at regular intervals
@@ -464,6 +502,19 @@ class ModernGame:
                 self.enemy_spawn_timer = self.enemy_spawn_delay # Reset the spawn timer
             else:
                 self.enemy_spawn_timer -= 1
+
+            # In ModernGame update method
+            for enemy in self.enemies:
+                if enemy.invulnerable_timer <= 0:
+                # Proceed with collision or damage logic
+                    hits = pygame.sprite.groupcollide(self.projectiles, self.enemies, True, False)
+                    for projectile, enemies_hit in hits.items():
+                        for enemy in enemies_hit:
+                            enemy.health -= 25  # Example damage
+                            if enemy.health <= 0:
+                                self.create_explosion(enemy.rect.centerx, enemy.rect.centery, NEON_GREEN)
+                                enemy.kill()
+                                self.score += 10
 
             
             # Spawn asteroids with increasing frequency and speed
@@ -586,7 +637,7 @@ class ModernGame:
             self.handle_events()
             self.update()
             self.draw()
-        
+            pygame.display.flip()
         pygame.quit()
 
 # Power-up class definition
