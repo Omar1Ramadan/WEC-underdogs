@@ -130,6 +130,8 @@ class Enemy(pygame.sprite.Sprite):
         self.speed = speed
         self.shoot_delay = shoot_delay
         self.shoot_timer = 0
+        self.shoot_delay = 60
+        self.speed = 1
         self.direction = pygame.math.Vector2(0, 0)
         self.change_direction_timer = 0
         self.change_direction_delay = 120
@@ -145,6 +147,17 @@ class Enemy(pygame.sprite.Sprite):
             self.change_direction_timer = self.change_direction_delay
         else:
             self.change_direction_timer -= 1
+
+        self.rect.x += self.direction.x * self.speed
+        self.rect.y += self.direction.y * self.speed
+
+        # Shooting logic
+        if player and self.shoot_timer <= 0:
+            self.shoot(player)
+            self.shoot_timer = self.shoot_delay
+        else:
+            self.shoot_timer -= 1
+
 
     def shoot(self, player):
         if player is None:
@@ -234,9 +247,10 @@ class ModernPlayer(pygame.sprite.Sprite):
             self.invincibility_timer -= 1
 
 class ModernProjectile(pygame.sprite.Sprite):
-    def __init__(self, x, y, angle, projectile_type):
+    def __init__(self, x, y, angle, projectile_type, is_player_projectile=False):
         super().__init__()
         self.type = projectile_type
+        self.is_player_projectile = is_player_projectile
         
         if self.type == "normal":
             self.size = (8, 8)
@@ -469,7 +483,7 @@ class ModernGame:
                     spawn_x = self.player.rect.centerx + (self.player.image.get_width() / 2) * math.cos(math.radians(self.player.angle))
                     spawn_y = self.player.rect.centery + (self.player.image.get_height() / 2) * math.sin(math.radians(self.player.angle))
                 
-                    projectile = ModernProjectile(spawn_x, spawn_y, self.player.angle, "normal")
+                    projectile = ModernProjectile(spawn_x, spawn_y, self.player.angle, "normal", is_player_projectile=True)
                     self.all_sprites.add(projectile)
                     self.projectiles.add(projectile)
                 elif event.key == pygame.K_q and self.player.shotgun_ammo >= 3:
@@ -484,7 +498,7 @@ class ModernGame:
 
                     for spread in spreadAngles:
                         proj_angle = self.player.angle + spread
-                        projectile = ModernProjectile(spawn_x, spawn_y, proj_angle, "shotgun")
+                        projectile = ModernProjectile(spawn_x, spawn_y, proj_angle, "shotgun", is_player_projectile=True)
                         self.all_sprites.add(projectile)
                         self.projectiles.add(projectile)
 
@@ -503,33 +517,61 @@ class ModernGame:
 
     def update(self):
         if not self.game_over:
-            for enemy in self.enemies:
-                enemy.update(self.player)
-            self.all_sprites.update()
-            self.update_particles()
-            # self.update_background()
+            # for enemy in self.enemies:
+            #     enemy.update(self.player)
+            # self.all_sprites.update()
+            # self.update_particles()
+            # # self.update_background()
 
-
-            # Spawn enenmies at regular intervals
             if self.enemy_spawn_timer <= 0:
                 self.spawn_enemy()
                 self.enemy_spawn_timer = self.enemy_spawn_delay # Reset the spawn timer
             else:
                 self.enemy_spawn_timer -= 1
 
-            # In ModernGame update method
-            for enemy in self.enemies:
-                if enemy.invulnerable_timer <= 0:
-                # Proceed with collision or damage logic
-                    hits = pygame.sprite.groupcollide(self.projectiles, self.enemies, True, False)
-                    for projectile, enemies_hit in hits.items():
-                        for enemy in enemies_hit:
-                            enemy.health -= 25  # Example damage
-                            if enemy.health <= 0:
-                                self.create_explosion(enemy.rect.centerx, enemy.rect.centery, NEON_GREEN)
-                                enemy.kill()
-                                self.score += 60
+            # # In ModernGame update method
+            # for enemy in self.enemies:
+            #     if enemy.invulnerable_timer <= 0:
+            #     # Proceed with collision or damage logic
+            #         hits = pygame.sprite.groupcollide(self.projectiles, self.enemies, True, False)
+            #         for projectile, enemies_hit in hits.items():
+            #             for enemy in enemies_hit:
+            #                 enemy.health -= 25  # Example damage
+            #                 if enemy.health <= 0:
+            #                     self.create_explosion(enemy.rect.centerx, enemy.rect.centery, NEON_GREEN)
+            #                     enemy.kill()
+            #                     self.score += 10
 
+            # Update all sprites and particles
+            self.enemies.update(self.player)
+            self.all_sprites.update()
+            self.update_particles()
+
+            # Only consider player projectiles in collisions with enemies
+            hits = pygame.sprite.groupcollide(self.projectiles, self.enemies, True, False)
+            
+            # Track enemies already hit this frame
+            hit_enemies = set()
+            
+            for projectile, enemies_hit in hits.items():
+                if not projectile.is_player_projectile:
+                    continue  # Skip non-player projectiles
+                
+                for enemy in enemies_hit:
+                    # Skip further processing if the enemy is invulnerable or already hit
+                    if enemy.invulnerable_timer > 0 or enemy in hit_enemies:
+                        continue
+                    
+                    # Apply damage and mark enemy as hit for this frame
+                    enemy.health -= 25  # Adjust damage as needed
+                    hit_enemies.add(enemy)
+                    
+                    # Check if enemy's health reaches zero
+                    if enemy.health <= 0:
+                        self.create_explosion(enemy.rect.centerx, enemy.rect.centery, NEON_GREEN)
+                        enemy.kill()
+                        self.score += 10
+            
             
             # Spawn asteroids with increasing frequency and speed
             if len(self.asteroids) < 5 + self.level:
@@ -645,14 +687,24 @@ class ModernGame:
         
         pygame.display.flip()
 
+    
+    
     def run(self):
         while self.running:
-            self.clock.tick(60)
-            self.handle_events()
-            self.update()
-            self.draw()
-            pygame.display.flip()
-        pygame.quit()
+            self.clock.tick(60)  # Limit to 60 frames per second
+            self.handle_events()  # Handle user input
+            
+            if not self.game_over:
+                self.update()  # Update game state
+            
+            self.draw()  # Render the game
+            
+            # Check for pause key
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_p]:  # Use the 'P' key to pause the game
+                show_pause_menu(self.screen)
+
+        pygame.quit()  # Clean up and exit
 
 # Power-up class definition
 class PowerUp(pygame.sprite.Sprite):
@@ -679,11 +731,9 @@ class PowerUp(pygame.sprite.Sprite):
 
 
             
-
 # Start the game
 if __name__ == "__main__":
     # Show start menu before starting the game
     show_start_menu(screen)
-    game = ModernGame()
-    game.run()       
-                        
+    game = ModernGame()  # Create an instance of the game
+    game.run()  # Start the game loop
